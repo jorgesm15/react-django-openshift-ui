@@ -1,9 +1,11 @@
+# frontend/Dockerfile
+
 # Etapa de build
 FROM node:16-alpine as build
 
 WORKDIR /app
 
-# Copiamos primero los archivos de dependencias
+# Copiamos los archivos de dependencias
 COPY package*.json ./
 
 # Instalamos dependencias
@@ -11,10 +13,6 @@ RUN npm ci
 
 # Copiamos el código fuente
 COPY . .
-
-# Aseguramos los permisos correctos
-RUN chown -R 1001:0 /app && \
-    chmod -R g+rwX /app
 
 # Construcción de la aplicación
 RUN npm run build
@@ -28,13 +26,18 @@ COPY nginx.conf /etc/nginx/nginx.conf
 # Copiamos los archivos construidos
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Configuramos los permisos para OpenShift
-RUN chown -R 1001:0 /usr/share/nginx/html && \
-    chmod -R g+rwX /usr/share/nginx/html && \
-    chown -R 1001:0 /var/cache/nginx /var/run /var/log/nginx && \
-    chmod -R g+rwX /var/cache/nginx /var/run /var/log/nginx
+# Creamos un usuario no privilegiado
+RUN adduser -D -H -u 1001 appuser && \
+    chown -R appuser:appuser /usr/share/nginx/html
+
+# Cambiamos los permisos para OpenShift
+RUN chmod -R 755 /usr/share/nginx/html && \
+    chown -R appuser:appuser /var/cache/nginx /var/run /var/log/nginx
 
 # Cambiamos al usuario no privilegiado
-USER 1001
+USER appuser
 
+# Exponemos el puerto que usará nginx
 EXPOSE 8080
+
+# El comando CMD se hereda de la imagen base de nginx
