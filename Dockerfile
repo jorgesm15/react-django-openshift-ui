@@ -1,44 +1,38 @@
-# frontend/Dockerfile
-
-# Etapa de build
+# --- Etapa de build ---
 FROM node:20-alpine as build
 
 WORKDIR /app
 
-# Copiamos los archivos de dependencias
+# Copiamos solo los archivos necesarios para instalar dependencias
 COPY package*.json ./
 
-# Instalamos dependencias
-RUN npm ci
+# Instalamos dependencias de forma optimizada
+RUN npm ci --omit=dev  # Solo instala dependencias de producción
 
-# Copiamos el código fuente
+# Copiamos el código fuente después de instalar dependencias
 COPY . .
 
 # Construcción de la aplicación
 RUN npm run build
 
-# Etapa de producción
-FROM nginxinc/nginx-unprivileged
+# --- Etapa de producción ---
+FROM nginx:alpine
+
+# Definir un directorio de trabajo para evitar problemas de permisos
+WORKDIR /usr/share/nginx/html
 
 # Copiamos la configuración de nginx
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Copiamos los archivos construidos
-COPY --from=build /app/dist /usr/share/nginx/html
+# Copiamos los archivos construidos desde la etapa anterior
+COPY --from=build /app/dist . 
 
-# Creamos un usuario no privilegiado
-RUN adduser -D -H -u 1001 appuser && \
-    chown -R appuser:appuser /usr/share/nginx/html
-
-# Cambiamos los permisos para OpenShift
+# Asegurar permisos adecuados para OpenShift
 RUN chmod -R 755 /usr/share/nginx/html && \
-    chown -R appuser:appuser /var/cache/nginx /var/run /var/log/nginx
+    chmod -R 777 /tmp /var/cache/nginx /var/run /var/log/nginx
 
-# Modificar permisos al folder de /tmp/
-RUN chmod -R 777 /tmp
-
-# Cambiamos al usuario no privilegiado
-USER appuser
+# OpenShift ejecuta los contenedores con un usuario arbitrario, 
+# así que no es necesario crear un usuario manualmente.
 
 # Exponemos el puerto que usará nginx
 EXPOSE 8080
