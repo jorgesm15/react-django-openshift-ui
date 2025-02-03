@@ -29,10 +29,7 @@ COPY --from=build /app/dist .
 
 # Asegurar permisos adecuados para OpenShift
 RUN chmod -R 755 /usr/share/nginx/html && \
-    chmod -R 777 /tmp /var/cache/nginx /var/run /var/log/nginx && \
-    mkdir -p /var/cache/nginx/client_temp && \
-    chmod -R 777 /var/cache/nginx/client_temp
-
+    chmod -R 777 /tmp /var/cache/nginx /var/run /var/log/nginx
 
 # OpenShift ejecuta los contenedores con un usuario arbitrario, 
 # así que no es necesario crear un usuario manualmente.
