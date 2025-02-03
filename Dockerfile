@@ -18,7 +18,7 @@ COPY . .
 RUN npm run build
 
 # Etapa de producción
-FROM nginx:alpine
+FROM nginxinc/nginx-unprivileged
 
 # Copiamos la configuración de nginx
 COPY nginx.conf /etc/nginx/nginx.conf
