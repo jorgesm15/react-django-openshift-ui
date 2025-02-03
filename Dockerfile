@@ -34,6 +34,9 @@ RUN adduser -D -H -u 1001 appuser && \
 RUN chmod -R 755 /usr/share/nginx/html && \
     chown -R appuser:appuser /var/cache/nginx /var/run /var/log/nginx
 
+# Modificar permisos al folder de /tmp/
+RUN chmod -R 777 /tmp
+
 # Cambiamos al usuario no privilegiado
 USER appuser
 
